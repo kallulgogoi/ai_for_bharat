@@ -1,0 +1,6 @@
+zone,ev_density,population,existing_stations,congestion_index,overloaded,graph_recommended,build_score,stations_recommended,position
+B,400.2,8063,1.0,180388.1,True,True,1.4678,3,1
+D,496.5,9981,3.0,65618.9,False,True,1.1094,3,2
+E,300.5,6044,1.0,123111.0,True,False,0.4024,2,3
+A,251.0,4990,2.0,49196.7,False,True,0.2776,2,4
+C,150.2,3010,0.0,97135.5,False,False,0.0731,1,5

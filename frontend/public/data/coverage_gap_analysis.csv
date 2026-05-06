@@ -1,0 +1,7 @@
+gap_pair,raw_distance_km,direct_weight,recommended_zone,cost_reduction_pct,benefit_score,fw_path
+A↔C,144.44,208.4285,B,-12.4,0.0,A → C
+A↔D,127.86,201.858,B,-12.8,0.0,A → D
+B↔C,139.72,352.6612,D,31.5,340.315,B → A → C
+B↔D,123.1,339.6265,A,36.8,309.251,B → A → D
+C↔E,112.5,208.2599,A,-29.7,0.0,C → E
+D↔E,95.78,196.9583,A,-33.9,0.0,D → E

@@ -1,0 +1,251 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ─── Design Tokens ──────────────────────────────────────────────────────── */
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Geist Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+}
+
+/* ─── Root Palette ───────────────────────────────────────────────────────── */
+:root {
+  /* Page */
+  --background: #F4F6FA;
+  --foreground: #111827;
+
+  /* Surfaces */
+  --card:           #FFFFFF;
+  --card-foreground: #111827;
+  --popover:        #FFFFFF;
+  --popover-foreground: #111827;
+
+  /* Accent — single indigo brand color */
+  --primary:           #4F46E5;
+  --primary-foreground: #FFFFFF;
+  --primary-light:     #EEF2FF;
+
+  /* Neutral */
+  --secondary:           #F9FAFB;
+  --secondary-foreground: #374151;
+  --muted:               #F3F4F6;
+  --muted-foreground:    #9CA3AF;
+  --accent:              #EEF2FF;
+  --accent-foreground:   #4F46E5;
+
+  /* Semantic */
+  --destructive: #DC2626;
+  --peak-color:  #DC2626;
+  --peak-bg:     #FEF2F2;
+  --offpeak-color: #059669;
+  --offpeak-bg:    #ECFDF5;
+  --warn-color:  #D97706;
+  --warn-bg:     #FFFBEB;
+
+  /* Structure */
+  --border:  #E5E7EB;
+  --divider: #F3F4F6;
+  --input:   #F3F4F6;
+  --ring:    #4F46E5;
+
+  /* Charts — professional sequential palette */
+  --chart-1: #4F46E5;
+  --chart-2: #0EA5E9;
+  --chart-3: #8B5CF6;
+  --chart-4: #059669;
+  --chart-5: #0891B2;
+
+  --radius: 0.625rem;
+
+  /* Sidebar */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #111827;
+  --sidebar-primary: #4F46E5;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EEF2FF;
+  --sidebar-accent-foreground: #4F46E5;
+  --sidebar-border: #E5E7EB;
+  --sidebar-ring: #4F46E5;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Geist Variable', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: #F3F4F6; }
+  ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+}
+
+/* ─── Card — shadow only, no border ─────────────────────────────────────── */
+.surface-card {
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* shadcn Card override — strip their border */
+[class*="card"] {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 4px 12px rgba(0, 0, 0, 0.06) !important;
+  border: none !important;
+}
+
+/* ─── Navbar ─────────────────────────────────────────────────────────────── */
+.app-nav {
+  background: #FFFFFF;
+  border-bottom: 1px solid #F3F4F6;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
+
+/* ─── Page section header ────────────────────────────────────────────────── */
+.section-header {
+  border-bottom: 1px solid #F3F4F6;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ─── Stat metric value ─────────────────────────────────────────────────── */
+.metric-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+  line-height: 1;
+}
+
+/* ─── Badge ──────────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.badge-peak     { background: #FEF2F2; color: #DC2626; }
+.badge-offpeak  { background: #ECFDF5; color: #059669; }
+.badge-primary  { background: #EEF2FF; color: #4F46E5; }
+.badge-warning  { background: #FFFBEB; color: #D97706; }
+
+/* ─── Table row hover ────────────────────────────────────────────────────── */
+.data-table tbody tr:hover {
+  background: #F9FAFB;
+}
+.data-table tbody tr {
+  border-bottom: 1px solid #F3F4F6;
+}
+.data-table thead th {
+  background: #F9FAFB;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+/* ─── Animations ─────────────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes barGrow {
+  from { width: 0%; }
+  to   { width: var(--bar-width, 100%); }
+}
+
+.anim-fade-up   { animation: fadeInUp 0.35s ease-out both; }
+.anim-fade-in   { animation: fadeIn 0.25s ease-out both; }
+.anim-count-up  { animation: countUp 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+
+.d-50  { animation-delay: 50ms; }
+.d-100 { animation-delay: 100ms; }
+.d-150 { animation-delay: 150ms; }
+.d-200 { animation-delay: 200ms; }
+.d-250 { animation-delay: 250ms; }
+.d-300 { animation-delay: 300ms; }
+.d-350 { animation-delay: 350ms; }
+.d-400 { animation-delay: 400ms; }
+
+/* ─── Recharts overrides ────────────────────────────────────────────────── */
+.recharts-cartesian-grid line {
+  stroke: #F3F4F6 !important;
+}
+.recharts-text {
+  fill: #9CA3AF !important;
+  font-size: 11px !important;
+  font-family: 'Geist Variable', sans-serif !important;
+}
+
+/* ─── Leaflet overrides ──────────────────────────────────────────────────── */
+.leaflet-container { background: #E5E7EB; }
+.leaflet-popup-content-wrapper {
+  background: #FFFFFF !important;
+  color: #111827 !important;
+  border: none !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12) !important;
+}
+.leaflet-popup-tip { background: #FFFFFF !important; }
