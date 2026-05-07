@@ -67,6 +67,6 @@ The frontend is a React application built with Vite and Tailwind CSS.
 
 ## 📁 Project Structure
 - `backend/main.py`: FastAPI server logic and AI model inference.
-- `backend/ai_bharat/`: Contains trained model weights (`.pth`) and datasets.
+- `ai_bharat/`: Contains trained model weights (`.pth`) and datasets.
 - `frontend/src/pages/`: React components for Dashboard, Map, and Insights.
 - `frontend/src/lib/data.js`: API consumption and data normalization layer.
