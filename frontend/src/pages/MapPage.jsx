@@ -220,40 +220,50 @@ export default function MapPage() {
               const c2 = ZONE_COORDS[z2];
               if (!c1 || !c2) return null;
 
+              const positions = [[c1.lat, c1.lon], [c2.lat, c2.lon]];
+
               return (
-                <Polyline
-                  key={`gap-line-${idx}`}
-                  positions={[[c1.lat, c1.lon], [c2.lat, c2.lon]]}
-                  pathOptions={{
-                    color: "#ef4444",
-                    weight: 2,
-                    dashArray: "5, 10",
-                    opacity: 0.6
-                  }}
-                >
-                  <Popup>
-                    <div className="p-2 min-w-[180px]">
-                      <div className="flex items-center gap-2 mb-2 text-red-600">
-                        <AlertTriangle size={14} />
-                        <span className="font-bold text-sm">Critical Coverage Gap</span>
-                      </div>
-                      <div className="space-y-1.5 text-xs">
-                        <p className="flex justify-between">
-                          <span className="text-slate-500">Route:</span>
-                          <span className="font-bold text-slate-800">{gap.gap_pair}</span>
-                        </p>
-                        <p className="flex justify-between">
-                          <span className="text-slate-500">Distance:</span>
-                          <span className="font-bold text-slate-800">{gap.raw_distance_km} km</span>
-                        </p>
-                        <div className="mt-2 p-2 bg-red-50 rounded border border-red-100">
-                          <p className="font-semibold text-red-700 mb-1">Mitigation Plan:</p>
-                          <p className="text-red-600 italic">Build at Zone {gap.recommended_zone}</p>
+                <div key={`gap-group-${idx}`}>
+                  {/* Invisible wider line for easier clicking */}
+                  <Polyline
+                    positions={positions}
+                    pathOptions={{ color: 'transparent', weight: 15 }}
+                  >
+                    <Popup>
+                      <div className="p-3 min-w-[240px]">
+                        <div className="flex items-center gap-2 mb-3 text-red-600">
+                          <AlertTriangle size={18} />
+                          <span className="font-bold text-base">Critical Coverage Gap</span>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between items-center bg-slate-50 p-2 rounded">
+                            <span className="text-slate-500 font-medium">Corridor:</span>
+                            <span className="font-bold text-slate-800">{gap.gap_pair}</span>
+                          </div>
+                          <div className="flex justify-between items-center px-2">
+                            <span className="text-slate-500">Raw Distance:</span>
+                            <span className="font-bold text-slate-800">{gap.raw_distance_km} km</span>
+                          </div>
+                          <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-100 shadow-sm">
+                            <p className="font-bold text-red-700 mb-1 text-xs uppercase tracking-wider">Mitigation Plan</p>
+                            <p className="text-red-800 font-semibold mb-1">Station Deployment Required</p>
+                            <p className="text-red-600 text-xs italic">Build at Zone {gap.recommended_zone} to bridge the gap.</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Popup>
-                </Polyline>
+                    </Popup>
+                  </Polyline>
+                  {/* Visible dashed line */}
+                  <Polyline
+                    positions={positions}
+                    pathOptions={{
+                      color: "#ef4444",
+                      weight: 3,
+                      dashArray: "10, 10",
+                      opacity: 0.8
+                    }}
+                  />
+                </div>
               );
             })}
 
@@ -262,73 +272,78 @@ export default function MapPage() {
               <CircleMarker 
                 key={zone.zone}
                 center={[zone.lat, zone.lon]} 
-                radius={zone.stations_recommended ? (zone.stations_recommended * 2) + 6 : 8}
+                radius={zone.stations_recommended ? (zone.stations_recommended * 2.5) + 8 : 10}
                 pathOptions={{ 
                   color: zone.hasGap ? "#ef4444" : "#ffffff", 
                   fillColor: ZONE_COLORS[zone.zone] || "#0f172a", 
-                  fillOpacity: 0.9, 
-                  weight: zone.hasGap ? 3 : 2 
+                  fillOpacity: 0.95, 
+                  weight: zone.hasGap ? 4 : 2 
                 }}
                 eventHandlers={{
                   click: () => handleZoneSelect(zone),
                 }}
               >
                 <Popup className="custom-popup">
-                  <div className="font-sans p-1" style={{ minWidth: 220 }}>
-                    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
-                      <div style={{ width: 12, height: 12, borderRadius: "50%", background: ZONE_COLORS[zone.zone] || "#0f172a" }} />
-                      <span className="font-bold text-slate-900 text-base">Zone {zone.zone}</span>
+                  <div className="font-sans p-2" style={{ minWidth: 280 }}>
+                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+                      <div style={{ width: 16, height: 16, borderRadius: "50%", background: ZONE_COLORS[zone.zone] || "#0f172a", border: '2px solid white', boxShadow: '0 0 0 1px #e2e8f0' }} />
+                      <span className="font-bold text-slate-900 text-lg tracking-tight">Zone {zone.zone} Analysis</span>
                     </div>
 
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="text-slate-500">EV Density / Pop.</span>
-                        <span className="font-semibold text-slate-700">{zone.ev_density} / {zone.population}</span>
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">EV Density</p>
+                        <p className="text-sm font-bold text-slate-800">{zone.ev_density}</p>
                       </div>
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="text-slate-500">Priority Score</span>
-                        <span className="font-bold text-indigo-600">{zone.build_score?.toFixed(2)}</span>
+                      <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Priority</p>
+                        <p className="text-sm font-bold text-indigo-600">{zone.build_score?.toFixed(2)}</p>
                       </div>
                     </div>
 
                     {/* Integrated AI Reroute Recommendation */}
                     {selectedZone?.zone === zone.zone && (
-                      <div className="mt-2 p-3 bg-indigo-50 rounded-lg border border-indigo-100 animate-in fade-in zoom-in duration-200">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Zap size={14} className="text-indigo-600" />
-                          <span className="text-[10px] uppercase font-bold text-indigo-700">AI Optimal Path</span>
-                        </div>
-                        {rerouteLoading ? (
+                      <div className="mt-2 p-4 bg-indigo-50 rounded-xl border border-indigo-100 shadow-inner animate-in fade-in zoom-in duration-300">
+                        <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <div className="w-3 h-3 border-2 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />
-                            <span className="text-[10px] text-indigo-600">Calculating...</span>
+                            <Zap size={18} className="text-indigo-600" />
+                            <span className="text-xs uppercase font-black text-indigo-800 tracking-wider">AI Optimal Path</span>
                           </div>
-                        ) : reroutingData.length > 0 ? (
-                          <div className="space-y-2">
-                            <p className="text-xs font-bold text-slate-800">
-                              Target: Zone {reroutingData[0].destination_zone}
-                            </p>
-                            <div className="flex flex-wrap items-center gap-1 text-[10px] font-medium text-slate-600">
-                               {reroutingData[0].fw_path?.split('→').map((p, i, arr) => (
-                                 <span key={i} className="flex items-center gap-1">
-                                   {p} {i < arr.length - 1 && <ArrowRight size={8} />}
-                                 </span>
-                               ))}
+                          {rerouteLoading && <div className="w-3 h-3 border-2 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />}
+                        </div>
+
+                        {reroutingData.length > 0 ? (
+                          <div className="space-y-3">
+                            <div className="p-2 bg-white/60 rounded-md border border-white">
+                               <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Dynamic Routing Path</p>
+                               <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-700">
+                                  {reroutingData[0].fw_path?.split('→').map((p, i, arr) => (
+                                    <span key={i} className="flex items-center gap-2">
+                                      <span className="bg-slate-800 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px]">{p}</span>
+                                      {i < arr.length - 1 && <ArrowRight size={12} className="text-slate-400" />}
+                                    </span>
+                                  ))}
+                               </div>
                             </div>
-                            <div className="flex justify-between pt-1 border-t border-indigo-100 mt-1">
-                              <span className="text-[9px] text-indigo-400">Efficiency</span>
-                              <span className="text-[9px] font-bold text-indigo-600">Cost: {reroutingData[0].effective_cost.toFixed(1)}</span>
+                            <div className="flex justify-between items-center px-1">
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-indigo-400 font-bold">Efficiency Score</span>
+                                <span className="text-sm font-black text-indigo-700">{reroutingData[0].effective_cost.toFixed(1)}</span>
+                              </div>
+                              <div className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${reroutingData[0].penalty_applied ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                {reroutingData[0].penalty_applied ? 'Congested' : 'Clear Path'}
+                              </div>
                             </div>
                           </div>
-                        ) : (
-                          <p className="text-[10px] text-slate-500 italic">No alternative routes found</p>
+                        ) : !rerouteLoading && (
+                          <p className="text-xs text-slate-500 italic text-center py-2">No optimal alternatives currently required</p>
                         )}
                       </div>
                     )}
 
                     {zone.stations_recommended > 0 && !rerouteLoading && (
-                      <div className="mt-3 bg-emerald-50 text-emerald-700 text-[10px] px-3 py-1.5 rounded-md font-bold flex items-center justify-center gap-1.5 border border-emerald-100">
-                        <MapPin size={12} /> Rec. +{zone.stations_recommended} Stations
+                      <div className="mt-4 bg-emerald-600 text-white text-xs px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20">
+                        <MapPin size={14} /> Recommended +{zone.stations_recommended} Station Deployment
                       </div>
                     )}
                   </div>
