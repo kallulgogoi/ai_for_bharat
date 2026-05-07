@@ -65,7 +65,7 @@ The frontend is a React application built with Vite and Tailwind CSS.
 - **Smart Rerouting**: Dynamically shifts traffic from overloaded zones to available charging clusters.
 - **Coverage Gap Analysis**: Identifies underserved urban corridors requiring immediate station deployment.
 
-## 📁 Project Structure
+## 📁 Project Structure:-
 - `backend/main.py`: FastAPI server logic and AI model inference.
 - `ai_bharat/`: Contains trained model weights (`.pth`) and datasets.
 - `frontend/src/pages/`: React components for Dashboard, Map, and Insights.
