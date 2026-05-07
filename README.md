@@ -2,7 +2,7 @@
 
 A sophisticated AI-driven platform for optimizing EV charging infrastructure in urban environments. This project uses PyTorch-based temporal attention models and graph-based optimization (Floyd-Warshall) to predict demand and identify coverage gaps.
 
-## 🚀 Quick Start Instructions
+## 🚀 Quick Start Instructions:
 
 ### Prerequisites
 - **Python 3.10+** (Recommended)
