@@ -1,0 +1,9 @@
+from_zone,to_zone,fw_cost,effective_cost,path,dest_overloaded
+B,A,12.954,12.954,B → A,False
+B,E,74.731,112.097,B → A → E,True
+B,D,214.812,214.812,B → A → D,False
+B,C,221.382,221.382,B → A → C,False
+E,A,61.777,61.777,E → A,False
+E,B,74.731,112.097,E → A → B,True
+E,D,196.958,196.958,E → D,False
+E,C,208.26,208.26,E → C,False

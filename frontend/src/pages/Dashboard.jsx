@@ -29,6 +29,7 @@ import {
   fetchStationPriority,
   fetchCoverageGaps,
   fetchFinalEVData,
+  predictDemand,
 } from "../lib/data";
 
 const ChartTooltip = ({ active, payload, label }) => {
@@ -61,6 +62,120 @@ const ChartTooltip = ({ active, payload, label }) => {
     </div>
   );
 };
+
+function AIDemandPredictor({ demandByHour }) {
+  const [prediction, setPrediction] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handlePredict = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Prepare 6 steps of 2 hours each = 12 hours
+      // Each step: [consumption_rate_kw, energy_drawn_kwh, ...other features]
+      // For demo, we'll use actual demand data from the chart
+      const last12Hours = demandByHour.slice(-6).map(d => [
+        75.0,           // Battery_Capacity_kWh
+        50.0,           // State_of_Charge_%
+        0.15,           // Energy_Consumption_Rate_kWh/km
+        20.0,           // Distance_to_Destination_km
+        2,              // Traffic_Data
+        d.count * 15.5, // Charging_Rate_kW (Proxy from demand count)
+        5.0,            // Queue_Time_mins
+        10,             // Station_Capacity_EV
+        45.0,           // Time_Spent_Charging_mins
+        d.energy,       // Energy_Drawn_kWh
+        d.hour,         // Session_Start_Hour
+        50,             // Fleet_Size
+        25.0 + Math.random() * 10, // Temperature_C
+        0.0,            // Precipitation_mm
+        new Date().getDay(), // Weekday
+        1,              // Charging_Preferences
+        1,              // Road_Average (One-hot)
+        0,              // Road_Good (One-hot)
+        0,              // Road_Poor (One-hot)
+        new Date().getDay(), // day_of_week
+        new Date().getDay() < 5 ? 1 : 0, // is_weekday
+        d.hour          // hour
+      ]);
+
+      if (last12Hours.length < 6) {
+        // Pad if not enough data with a neutral vector
+        const neutralStep = [75, 50, 0.15, 20, 2, 100, 5, 10, 45, 150, 12, 50, 25, 0, 1, 1, 1, 0, 0, 1, 1, 12];
+        while (last12Hours.length < 6) {
+          last12Hours.unshift(neutralStep);
+        }
+      }
+
+      const result = await predictDemand(last12Hours);
+      setPrediction(result);
+    } catch (err) {
+      console.error("Prediction failed", err);
+      setError(err.message || "AI engine unavailable. Please check backend connection.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-lg mb-6">
+      <div className="p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+            <Zap className="text-emerald-400" size={24} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white">AI Demand Forecaster</h3>
+            <p className="text-sm text-slate-400">RNN-based temporal attention model for next-step load prediction</p>
+          </div>
+        </div>
+        <button 
+          onClick={handlePredict}
+          disabled={loading}
+          className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-700 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+        >
+          {loading ? (
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <Activity size={18} />
+          )}
+          {loading ? "Analyzing..." : "Run AI Prediction"}
+        </button>
+      </div>
+
+      {error && (
+        <div className="mx-5 mb-5 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-3 text-red-400">
+          <AlertTriangle size={18} />
+          <p className="text-sm font-medium">{error}</p>
+        </div>
+      )}
+
+      {prediction && prediction.prediction && (
+        <div className="px-5 pb-5 grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">Predicted Demand</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-emerald-400">{prediction.prediction.demand_percentage}%</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${prediction.prediction.risk_level === 'High' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                {prediction.prediction.risk_level} Risk
+              </span>
+            </div>
+          </div>
+          <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">Dominant Influence</p>
+            <p className="text-sm font-semibold text-white">{prediction.ai_insight?.dominant_influence_window}</p>
+            <p className="text-[10px] text-slate-400 mt-1">Attention Score: {prediction.ai_insight?.attention_score}</p>
+          </div>
+          <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+            <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mb-1">Model Analysis</p>
+            <p className="text-xs text-slate-300 leading-snug">{prediction.ai_insight?.analysis}</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SectionTitle({ icon: Icon, title, subtitle, iconColor = "#0f172a" }) {
   return (
@@ -245,6 +360,8 @@ export default function Dashboard() {
           accent="#991b1b"
         />
       </div>
+
+      <AIDemandPredictor demandByHour={demandByHour} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="bg-white border border-slate-200 shadow-sm rounded-xl overflow-hidden">

@@ -43,6 +43,8 @@ export default function MapPage() {
   const [priorityData, setPriorityData] = useState([]);
   const [gapData, setGapData] = useState([]);
   const [reroutingData, setReroutingData] = useState([]);
+  const [selectedZone, setSelectedZone] = useState(null);
+  const [rerouteLoading, setRerouteLoading] = useState(false);
   
   const [filters, setFilters] = useState({ stations: true, gaps: true, rerouting: true });
 
@@ -52,7 +54,7 @@ export default function MapPage() {
         const [priorityRes, gapRes, routeRes] = await Promise.all([
           fetchStationPriority(),
           fetchCoverageGaps(),
-          fetchSmartRerouting()
+          fetchSmartRerouting("A") // Initial load for Zone A
         ]);
         setPriorityData(priorityRes.filter(d => d.zone));
         setGapData(gapRes.filter(d => d.gap_pair));
@@ -65,6 +67,19 @@ export default function MapPage() {
     }
     loadData();
   }, []);
+
+  const handleZoneSelect = async (zone) => {
+    setSelectedZone(zone);
+    setRerouteLoading(true);
+    try {
+      const routeRes = await fetchSmartRerouting(zone.zone);
+      setReroutingData(routeRes.filter(d => d.path));
+    } catch (err) {
+      console.error("Reroute Fetch Error", err);
+    } finally {
+      setRerouteLoading(false);
+    }
+  };
 
   const toggle = key => setFilters(p => ({ ...p, [key]: !p[key] }));
 
@@ -135,15 +150,15 @@ export default function MapPage() {
             <ul className="space-y-4 text-sm mt-4">
               <li className="flex gap-3">
                 <MapPin size={16} className="text-slate-400 shrink-0 mt-0.5" />
-                <span><strong className="text-white">Colored Dots</strong> represent key Zones. The larger the dot, the higher the priority to build new charging stations.</span>
+                <span><strong className="text-white">Colored Dots</strong> represent key Zones. The larger the dot, the higher the priority to build new charging stations. Click a zone to see AI rerouting suggestions.</span>
               </li>
               <li className="flex gap-3">
                 <AlertTriangle size={16} className="text-red-400 shrink-0 mt-0.5" />
-                <span><strong className="text-red-400">Red Pulsing Halos</strong> indicate severe coverage gaps where EV drivers run out of charge.</span>
+                <span><strong className="text-red-400">Dashed Red Lines</strong> indicate severe coverage gaps where EV drivers run out of charge. Click the line for mitigation plans.</span>
               </li>
               <li className="flex gap-3">
                 <ArrowRight size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-                <span><strong className="text-emerald-400">Dashed Lines</strong> show our AI Rerouting paths. It shifts traffic from overloaded zones to underutilized ones.</span>
+                <span><strong className="text-emerald-400">Dashed Emerald Lines</strong> show our AI Rerouting paths. It shifts traffic from overloaded zones to underutilized ones.</span>
               </li>
             </ul>
           </div>
@@ -195,21 +210,52 @@ export default function MapPage() {
                </Polyline>
             ))}
 
-            {/* Coverage Gaps (Red halos) */}
-            {filters.gaps && markers.filter(m => m.hasGap).map(zone => (
-              <CircleMarker 
-                key={`gap-${zone.zone}`}
-                center={[zone.lat, zone.lon]} 
-                radius={30}
-                pathOptions={{ 
-                  color: "#ef4444", 
-                  fillColor: "#ef4444", 
-                  fillOpacity: 0.15, 
-                  weight: 2,
-                  dashArray: "4 4"
-                }} 
-              />
-            ))}
+            {/* Coverage Gaps (Red dashed lines between zones) */}
+            {filters.gaps && gapData.map((gap, idx) => {
+              const z1 = gap.zones_involved?.[0];
+              const z2 = gap.zones_involved?.[1];
+              if (!z1 || !z2) return null;
+              
+              const c1 = ZONE_COORDS[z1];
+              const c2 = ZONE_COORDS[z2];
+              if (!c1 || !c2) return null;
+
+              return (
+                <Polyline
+                  key={`gap-line-${idx}`}
+                  positions={[[c1.lat, c1.lon], [c2.lat, c2.lon]]}
+                  pathOptions={{
+                    color: "#ef4444",
+                    weight: 2,
+                    dashArray: "5, 10",
+                    opacity: 0.6
+                  }}
+                >
+                  <Popup>
+                    <div className="p-2 min-w-[180px]">
+                      <div className="flex items-center gap-2 mb-2 text-red-600">
+                        <AlertTriangle size={14} />
+                        <span className="font-bold text-sm">Critical Coverage Gap</span>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <p className="flex justify-between">
+                          <span className="text-slate-500">Route:</span>
+                          <span className="font-bold text-slate-800">{gap.gap_pair}</span>
+                        </p>
+                        <p className="flex justify-between">
+                          <span className="text-slate-500">Distance:</span>
+                          <span className="font-bold text-slate-800">{gap.raw_distance_km} km</span>
+                        </p>
+                        <div className="mt-2 p-2 bg-red-50 rounded border border-red-100">
+                          <p className="font-semibold text-red-700 mb-1">Mitigation Plan:</p>
+                          <p className="text-red-600 italic">Build at Zone {gap.recommended_zone}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </Popup>
+                </Polyline>
+              );
+            })}
 
             {/* Station Markers & Priority */}
             {filters.stations && markers.map(zone => (
@@ -218,28 +264,70 @@ export default function MapPage() {
                 center={[zone.lat, zone.lon]} 
                 radius={zone.stations_recommended ? (zone.stations_recommended * 2) + 6 : 8}
                 pathOptions={{ 
-                  color: "#ffffff", 
+                  color: zone.hasGap ? "#ef4444" : "#ffffff", 
                   fillColor: ZONE_COLORS[zone.zone] || "#0f172a", 
                   fillOpacity: 0.9, 
-                  weight: 2 
-                }}>
+                  weight: zone.hasGap ? 3 : 2 
+                }}
+                eventHandlers={{
+                  click: () => handleZoneSelect(zone),
+                }}
+              >
                 <Popup className="custom-popup">
-                  <div className="font-sans p-1" style={{ minWidth: 200 }}>
+                  <div className="font-sans p-1" style={{ minWidth: 220 }}>
                     <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100">
                       <div style={{ width: 12, height: 12, borderRadius: "50%", background: ZONE_COLORS[zone.zone] || "#0f172a" }} />
                       <span className="font-bold text-slate-900 text-base">Zone {zone.zone}</span>
                     </div>
-                    <div className="space-y-2 mb-3">
-                      <div className="flex justify-between items-center"><span className="text-slate-500 text-xs">Population</span><span className="font-semibold text-slate-700 text-xs">{zone.population}</span></div>
-                      <div className="flex justify-between items-center"><span className="text-slate-500 text-xs">EV Density</span><span className="font-semibold text-slate-700 text-xs">{zone.ev_density}</span></div>
-                      <div className="flex justify-between items-center"><span className="text-slate-500 text-xs">Existing Stations</span><span className="font-semibold text-slate-700 text-xs">{zone.existing_stations}</span></div>
-                      <div className="flex justify-between items-center pt-2 border-t border-slate-50">
-                        <span className="text-slate-500 text-xs font-semibold">Priority Score</span>
-                        <span className="font-bold text-indigo-600 text-sm">{zone.build_score?.toFixed(2)}</span>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-slate-500">EV Density / Pop.</span>
+                        <span className="font-semibold text-slate-700">{zone.ev_density} / {zone.population}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-slate-500">Priority Score</span>
+                        <span className="font-bold text-indigo-600">{zone.build_score?.toFixed(2)}</span>
                       </div>
                     </div>
-                    {zone.stations_recommended > 0 && (
-                      <div className="mt-1 bg-emerald-50 text-emerald-700 text-xs px-3 py-1.5 rounded-md font-bold flex items-center justify-center gap-1.5 border border-emerald-100">
+
+                    {/* Integrated AI Reroute Recommendation */}
+                    {selectedZone?.zone === zone.zone && (
+                      <div className="mt-2 p-3 bg-indigo-50 rounded-lg border border-indigo-100 animate-in fade-in zoom-in duration-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Zap size={14} className="text-indigo-600" />
+                          <span className="text-[10px] uppercase font-bold text-indigo-700">AI Optimal Path</span>
+                        </div>
+                        {rerouteLoading ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 border-2 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />
+                            <span className="text-[10px] text-indigo-600">Calculating...</span>
+                          </div>
+                        ) : reroutingData.length > 0 ? (
+                          <div className="space-y-2">
+                            <p className="text-xs font-bold text-slate-800">
+                              Target: Zone {reroutingData[0].destination_zone}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1 text-[10px] font-medium text-slate-600">
+                               {reroutingData[0].fw_path?.split('→').map((p, i, arr) => (
+                                 <span key={i} className="flex items-center gap-1">
+                                   {p} {i < arr.length - 1 && <ArrowRight size={8} />}
+                                 </span>
+                               ))}
+                            </div>
+                            <div className="flex justify-between pt-1 border-t border-indigo-100 mt-1">
+                              <span className="text-[9px] text-indigo-400">Efficiency</span>
+                              <span className="text-[9px] font-bold text-indigo-600">Cost: {reroutingData[0].effective_cost.toFixed(1)}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-slate-500 italic">No alternative routes found</p>
+                        )}
+                      </div>
+                    )}
+
+                    {zone.stations_recommended > 0 && !rerouteLoading && (
+                      <div className="mt-3 bg-emerald-50 text-emerald-700 text-[10px] px-3 py-1.5 rounded-md font-bold flex items-center justify-center gap-1.5 border border-emerald-100">
                         <MapPin size={12} /> Rec. +{zone.stations_recommended} Stations
                       </div>
                     )}
